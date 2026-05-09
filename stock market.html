@@ -1,0 +1,1619 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Stock Market Intelligence Dashboard</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/3.9.1/chart.min.js"></script>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        :root {
+            --primary: #0f766e;
+            --primary-light: #14b8a6;
+            --accent: #ec4899;
+            --bg-dark: #0f172a;
+            --bg-card: #1e293b;
+            --bg-hover: #334155;
+            --text-primary: #f1f5f9;
+            --text-secondary: #cbd5e1;
+            --success: #10b981;
+            --danger: #ef4444;
+            --warning: #f59e0b;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', sans-serif;
+            background: linear-gradient(135deg, var(--bg-dark) 0%, #1a2540 100%);
+            color: var(--text-primary);
+            line-height: 1.6;
+            overflow-x: hidden;
+            min-height: 100vh;
+        }
+
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+
+        header {
+            background: linear-gradient(135deg, var(--bg-card) 0%, var(--bg-hover) 100%);
+            border-bottom: 2px solid var(--primary);
+            padding: 30px 20px;
+            margin-bottom: 30px;
+            border-radius: 12px;
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
+            animation: slideDown 0.6s ease-out;
+        }
+
+        @keyframes slideDown {
+            from {
+                opacity: 0;
+                transform: translateY(-20px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        h1 {
+            font-size: 2.5em;
+            margin-bottom: 10px;
+            background: linear-gradient(135deg, var(--primary-light), var(--accent));
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+
+        .subtitle {
+            color: var(--text-secondary);
+            font-size: 1em;
+        }
+
+        .tabs {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 30px;
+            flex-wrap: wrap;
+            border-bottom: 2px solid var(--bg-hover);
+        }
+
+        .tab-btn {
+            padding: 12px 24px;
+            background: transparent;
+            border: none;
+            color: var(--text-secondary);
+            cursor: pointer;
+            font-size: 1em;
+            font-weight: 600;
+            border-bottom: 3px solid transparent;
+            transition: all 0.3s ease;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+
+        .tab-btn:hover {
+            color: var(--primary-light);
+        }
+
+        .tab-btn.active {
+            color: var(--primary-light);
+            border-bottom-color: var(--primary-light);
+        }
+
+        .grid-2 {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(500px, 1fr));
+            gap: 20px;
+            margin-bottom: 30px;
+        }
+
+        .grid-3 {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 20px;
+            margin-bottom: 30px;
+        }
+
+        .grid-4 {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 20px;
+            margin-bottom: 30px;
+        }
+
+        .card {
+            background: linear-gradient(135deg, var(--bg-card) 0%, rgba(30, 41, 59, 0.8) 100%);
+            border: 1px solid rgba(20, 184, 166, 0.2);
+            border-radius: 12px;
+            padding: 20px;
+            box-shadow: 0 4px 16px rgba(0, 0, 0, 0.2);
+            transition: all 0.3s ease;
+            animation: fadeInUp 0.6s ease-out both;
+        }
+
+        @keyframes fadeInUp {
+            from {
+                opacity: 0;
+                transform: translateY(20px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .card:hover {
+            border-color: rgba(20, 184, 166, 0.4);
+            box-shadow: 0 8px 24px rgba(20, 184, 166, 0.1);
+            transform: translateY(-2px);
+        }
+
+        .card h2 {
+            font-size: 1.3em;
+            margin-bottom: 15px;
+            color: var(--primary-light);
+        }
+
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 15px;
+            margin-bottom: 20px;
+        }
+
+        .stat-box {
+            background: rgba(20, 184, 166, 0.1);
+            border: 1px solid var(--primary);
+            border-radius: 8px;
+            padding: 15px;
+            text-align: center;
+        }
+
+        .stat-label {
+            color: var(--text-secondary);
+            font-size: 0.9em;
+            margin-bottom: 8px;
+        }
+
+        .stat-value {
+            font-size: 1.8em;
+            font-weight: bold;
+            color: var(--primary-light);
+        }
+
+        .positive {
+            color: var(--success);
+        }
+
+        .negative {
+            color: var(--danger);
+        }
+
+        .chart-container {
+            position: relative;
+            height: 400px;
+            margin-bottom: 20px;
+        }
+
+        .mini-chart {
+            position: relative;
+            height: 200px;
+        }
+
+        .controls {
+            display: flex;
+            gap: 15px;
+            margin-bottom: 20px;
+            flex-wrap: wrap;
+        }
+
+        select, input {
+            background: var(--bg-hover);
+            border: 1px solid var(--primary);
+            color: var(--text-primary);
+            padding: 10px 15px;
+            border-radius: 6px;
+            font-size: 1em;
+            cursor: pointer;
+        }
+
+        button {
+            background: linear-gradient(135deg, var(--primary), var(--primary-light));
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 6px;
+            cursor: pointer;
+            font-weight: 600;
+            transition: all 0.3s ease;
+        }
+
+        button:hover {
+            box-shadow: 0 4px 12px rgba(20, 184, 166, 0.3);
+            transform: translateY(-2px);
+        }
+
+        .table-wrapper {
+            overflow-x: auto;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+
+        th {
+            background: rgba(20, 184, 166, 0.15);
+            padding: 12px;
+            text-align: left;
+            font-weight: 600;
+            color: var(--primary-light);
+            border-bottom: 2px solid var(--primary);
+        }
+
+        td {
+            padding: 12px;
+            border-bottom: 1px solid var(--bg-hover);
+        }
+
+        .prediction-box {
+            background: linear-gradient(135deg, rgba(16, 185, 129, 0.1), rgba(20, 184, 166, 0.1));
+            border-left: 4px solid var(--success);
+            padding: 20px;
+            border-radius: 8px;
+            margin-bottom: 15px;
+        }
+
+        .badge {
+            display: inline-block;
+            padding: 4px 12px;
+            border-radius: 20px;
+            font-size: 0.85em;
+            font-weight: 600;
+        }
+
+        .badge-success {
+            background: rgba(16, 185, 129, 0.2);
+            color: var(--success);
+        }
+
+        .badge-danger {
+            background: rgba(239, 68, 68, 0.2);
+            color: var(--danger);
+        }
+
+        .badge-warning {
+            background: rgba(245, 158, 11, 0.2);
+            color: var(--warning);
+        }
+
+        .hidden {
+            display: none !important;
+        }
+
+        .tab-content {
+            animation: fadeIn 0.5s ease-out;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; }
+            to { opacity: 1; }
+        }
+
+        @media (max-width: 768px) {
+            .grid-2, .grid-3, .grid-4 {
+                grid-template-columns: 1fr;
+            }
+
+            h1 {
+                font-size: 1.8em;
+            }
+
+            .chart-container {
+                height: 300px;
+            }
+        }
+
+        .insight-text {
+            color: var(--text-secondary);
+            line-height: 1.8;
+            margin: 10px 0;
+        }
+
+        ul {
+            margin-left: 20px;
+            margin-top: 10px;
+        }
+
+        li {
+            margin: 8px 0;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <!-- Header -->
+        <header>
+            <h1>📈 Stock Market Intelligence Dashboard</h1>
+            <p class="subtitle">Real-time Analysis, Predictive Insights & Machine Learning Forecasts</p>
+        </header>
+
+        <!-- Tabs -->
+        <div class="tabs">
+            <button class="tab-btn active" onclick="showTab('overview')">Overview</button>
+            <button class="tab-btn" onclick="showTab('analysis')">Technical Analysis</button>
+            <button class="tab-btn" onclick="showTab('prediction')">Price Prediction</button>
+            <button class="tab-btn" onclick="showTab('portfolio')">Portfolio</button>
+            <button class="tab-btn" onclick="showTab('insights')">AI Insights</button>
+        </div>
+
+        <!-- Tab: Overview -->
+        <div id="overview" class="tab-content">
+            <div class="card">
+                <h2>Market Summary</h2>
+                <div class="controls">
+                    <select id="stockSelect" onchange="updateOverview()">
+                        <option value="AAPL">Apple (AAPL)</option>
+                        <option value="GOOGL">Google (GOOGL)</option>
+                        <option value="MSFT">Microsoft (MSFT)</option>
+                        <option value="TSLA">Tesla (TSLA)</option>
+                        <option value="AMZN">Amazon (AMZN)</option>
+                    </select>
+                    <button onclick="updateOverview()">Refresh Analysis</button>
+                </div>
+            </div>
+
+            <div class="stats-grid" id="statsGrid"></div>
+
+            <div class="grid-2">
+                <div class="card">
+                    <h2>Price Trend (30 Days)</h2>
+                    <div class="chart-container">
+                        <canvas id="priceChart"></canvas>
+                    </div>
+                </div>
+                <div class="card">
+                    <h2>Volume Analysis</h2>
+                    <div class="chart-container">
+                        <canvas id="volumeChart"></canvas>
+                    </div>
+                </div>
+            </div>
+
+            <div class="grid-2">
+                <div class="card">
+                    <h2>Returns Distribution</h2>
+                    <div class="mini-chart">
+                        <canvas id="returnsChart"></canvas>
+                    </div>
+                </div>
+                <div class="card">
+                    <h2>Volatility Over Time</h2>
+                    <div class="mini-chart">
+                        <canvas id="volatilityChart"></canvas>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Tab: Technical Analysis -->
+        <div id="analysis" class="tab-content hidden">
+            <div class="grid-2">
+                <div class="card">
+                    <h2>Moving Averages</h2>
+                    <div class="chart-container">
+                        <canvas id="maChart"></canvas>
+                    </div>
+                </div>
+                <div class="card">
+                    <h2>RSI (Relative Strength Index)</h2>
+                    <div class="chart-container">
+                        <canvas id="rsiChart"></canvas>
+                    </div>
+                </div>
+            </div>
+
+            <div class="grid-2">
+                <div class="card">
+                    <h2>MACD (Momentum Indicator)</h2>
+                    <div class="chart-container">
+                        <canvas id="macdChart"></canvas>
+                    </div>
+                </div>
+                <div class="card">
+                    <h2>Bollinger Bands</h2>
+                    <div class="chart-container">
+                        <canvas id="bbChart"></canvas>
+                    </div>
+                </div>
+            </div>
+
+            <div class="card">
+                <h2>Technical Indicators Summary</h2>
+                <div class="table-wrapper">
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>Indicator</th>
+                                <th>Value</th>
+                                <th>Signal</th>
+                                <th>Interpretation</th>
+                            </tr>
+                        </thead>
+                        <tbody id="technicalTable"></tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+
+        <!-- Tab: Prediction -->
+        <div id="prediction" class="tab-content hidden">
+            <div class="grid-2">
+                <div class="card">
+                    <h2>Linear Regression Forecast</h2>
+                    <div class="chart-container">
+                        <canvas id="predictionChart"></canvas>
+                    </div>
+                </div>
+                <div class="card">
+                    <h2>Ensemble Forecast</h2>
+                    <div class="chart-container">
+                        <canvas id="maPredictionChart"></canvas>
+                    </div>
+                </div>
+            </div>
+
+            <div class="card">
+                <h2>30-Day Price Predictions</h2>
+                <div id="predictionBoxes"></div>
+            </div>
+
+            <div class="grid-3">
+                <div class="card">
+                    <h2>Prediction Metrics</h2>
+                    <div id="predictionMetrics"></div>
+                </div>
+                <div class="card">
+                    <h2>Confidence Levels</h2>
+                    <div class="chart-container">
+                        <canvas id="confidenceChart"></canvas>
+                    </div>
+                </div>
+                <div class="card">
+                    <h2>Risk Assessment</h2>
+                    <div id="riskAssessment"></div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Tab: Portfolio -->
+        <div id="portfolio" class="tab-content hidden">
+            <div class="card">
+                <h2>Multi-Stock Portfolio Analysis</h2>
+                <button onclick="analyzePortfolio()">Calculate Portfolio Metrics</button>
+            </div>
+
+            <div class="grid-3">
+                <div class="card">
+                    <h2>Portfolio Composition</h2>
+                    <div class="mini-chart">
+                        <canvas id="portfolioChart"></canvas>
+                    </div>
+                </div>
+                <div class="card">
+                    <h2>Portfolio Statistics</h2>
+                    <div id="portfolioStats"></div>
+                </div>
+                <div class="card">
+                    <h2>Performance Summary</h2>
+                    <div id="portfolioSummary"></div>
+                </div>
+            </div>
+
+            <div class="card">
+                <h2>Individual Stock Performance</h2>
+                <div class="table-wrapper">
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>Stock</th>
+                                <th>Current Price</th>
+                                <th>30-Day Return</th>
+                                <th>Volatility</th>
+                                <th>Sharpe Ratio</th>
+                            </tr>
+                        </thead>
+                        <tbody id="portfolioTable"></tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+
+        <!-- Tab: AI Insights -->
+        <div id="insights" class="tab-content hidden">
+            <div class="card">
+                <h2>AI-Generated Market Insights</h2>
+                <div id="aiInsights"></div>
+            </div>
+
+            <div class="grid-2">
+                <div class="card">
+                    <h2>Buy/Sell Signals</h2>
+                    <div id="signals"></div>
+                </div>
+                <div class="card">
+                    <h2>Investment Recommendations</h2>
+                    <div id="recommendations"></div>
+                </div>
+            </div>
+
+            <div class="card">
+                <h2>Comprehensive Analysis Report</h2>
+                <div id="analysisReport"></div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // ============ DATA GENERATOR ============
+        class StockDataGenerator {
+            constructor(ticker) {
+                this.ticker = ticker;
+                this.basePrice = this.getBasePrice(ticker);
+            }
+
+            getBasePrice(ticker) {
+                const prices = {
+                    'AAPL': 150,
+                    'GOOGL': 140,
+                    'MSFT': 380,
+                    'TSLA': 220,
+                    'AMZN': 180
+                };
+                return prices[ticker] || 100;
+            }
+
+            generateData(days = 30) {
+                const data = [];
+                let price = this.basePrice;
+                const today = new Date();
+
+                for (let i = days; i >= 0; i--) {
+                    const date = new Date(today);
+                    date.setDate(date.getDate() - i);
+                    
+                    const trend = 0.0003;
+                    const volatility = 0.02;
+                    const randomWalk = (Math.random() - 0.5) * 2 * volatility;
+                    price = price * (1 + trend + randomWalk);
+                    
+                    data.push({
+                        date: date,
+                        close: parseFloat(price.toFixed(2)),
+                        open: parseFloat((price * (1 - Math.random() * 0.01)).toFixed(2)),
+                        high: parseFloat((price * (1 + Math.random() * 0.01)).toFixed(2)),
+                        low: parseFloat((price * (1 - Math.random() * 0.01)).toFixed(2)),
+                        volume: Math.floor(Math.random() * 100000000) + 50000000
+                    });
+                }
+
+                return data;
+            }
+        }
+
+        // ============ DATA ANALYZER ============
+        class DataAnalyzer {
+            constructor(data) {
+                this.data = data;
+            }
+
+            getStats() {
+                const closes = this.data.map(d => d.close);
+                const returns = [];
+                
+                for (let i = 1; i < closes.length; i++) {
+                    returns.push((closes[i] - closes[i-1]) / closes[i-1]);
+                }
+
+                const mean = returns.reduce((a, b) => a + b, 0) / returns.length;
+                const variance = returns.reduce((sq, n) => sq + Math.pow(n - mean, 2), 0) / returns.length;
+                const stdDev = Math.sqrt(variance);
+
+                return {
+                    current: closes[closes.length - 1],
+                    previous: closes[closes.length - 2],
+                    open: this.data[this.data.length - 1].open,
+                    high: Math.max(...this.data.map(d => d.high)),
+                    low: Math.min(...this.data.map(d => d.low)),
+                    avg: closes.reduce((a, b) => a + b) / closes.length,
+                    change: closes[closes.length - 1] - closes[0],
+                    changePercent: ((closes[closes.length - 1] - closes[0]) / closes[0] * 100),
+                    volatility: stdDev * Math.sqrt(252) * 100,
+                    returns: returns
+                };
+            }
+
+            movingAverage(period) {
+                const closes = this.data.map(d => d.close);
+                const ma = [];
+                
+                for (let i = 0; i < closes.length; i++) {
+                    if (i < period - 1) {
+                        ma.push(null);
+                    } else {
+                        const slice = closes.slice(i - period + 1, i + 1);
+                        ma.push(slice.reduce((a, b) => a + b) / period);
+                    }
+                }
+                return ma;
+            }
+
+            calculateRSI(period = 14) {
+                const closes = this.data.map(d => d.close);
+                const rsi = [];
+                const changes = [];
+
+                for (let i = 1; i < closes.length; i++) {
+                    changes.push(closes[i] - closes[i-1]);
+                }
+
+                for (let i = 0; i < closes.length; i++) {
+                    if (i < period) {
+                        rsi.push(null);
+                    } else {
+                        const gains = changes.slice(i - period, i).filter(c => c > 0).reduce((a, b) => a + b, 0);
+                        const losses = Math.abs(changes.slice(i - period, i).filter(c => c < 0).reduce((a, b) => a + b, 0));
+                        const rs = (gains / period) / (losses / period);
+                        rsi.push(100 - (100 / (1 + rs)));
+                    }
+                }
+
+                return rsi;
+            }
+
+            calculateMACD() {
+                const ema12 = this.exponentialMA(12);
+                const ema26 = this.exponentialMA(26);
+                const macd = [];
+                
+                for (let i = 0; i < ema12.length; i++) {
+                    if (ema12[i] && ema26[i]) {
+                        macd.push(ema12[i] - ema26[i]);
+                    } else {
+                        macd.push(null);
+                    }
+                }
+
+                const signal = this.calculateEMA(macd.filter(x => x !== null), 9);
+                return { macd, signal };
+            }
+
+            exponentialMA(period) {
+                const closes = this.data.map(d => d.close);
+                const k = 2 / (period + 1);
+                let ema = [closes[0]];
+
+                for (let i = 1; i < closes.length; i++) {
+                    ema.push(closes[i] * k + ema[i - 1] * (1 - k));
+                }
+
+                return ema;
+            }
+
+            calculateEMA(data, period) {
+                const k = 2 / (period + 1);
+                let ema = [data[0]];
+
+                for (let i = 1; i < data.length; i++) {
+                    ema.push(data[i] * k + ema[i - 1] * (1 - k));
+                }
+
+                return ema;
+            }
+
+            calculateBollingerBands(period = 20, stdDev = 2) {
+                const closes = this.data.map(d => d.close);
+                const sma = this.movingAverage(period);
+                const bands = [];
+
+                for (let i = 0; i < closes.length; i++) {
+                    if (sma[i] === null) {
+                        bands.push(null);
+                    } else {
+                        const slice = closes.slice(i - period + 1, i + 1);
+                        const variance = slice.reduce((sq, n) => sq + Math.pow(n - sma[i], 2), 0) / period;
+                        const std = Math.sqrt(variance);
+                        bands.push({
+                            upper: sma[i] + std * stdDev,
+                            middle: sma[i],
+                            lower: sma[i] - std * stdDev
+                        });
+                    }
+                }
+
+                return bands;
+            }
+        }
+
+        // ============ ML PREDICTOR ============
+        class MLPredictor {
+            constructor(data) {
+                this.data = data;
+                this.analyzer = new DataAnalyzer(data);
+            }
+
+            linearRegression(days = 30) {
+                const closes = this.data.map(d => d.close);
+                const n = closes.length;
+                const x = Array.from({length: n}, (_, i) => i);
+                
+                const xMean = x.reduce((a, b) => a + b) / n;
+                const yMean = closes.reduce((a, b) => a + b) / n;
+
+                const numerator = x.reduce((sum, xi, i) => sum + (xi - xMean) * (closes[i] - yMean), 0);
+                const denominator = x.reduce((sum, xi) => sum + Math.pow(xi - xMean, 2), 0);
+                const slope = numerator / denominator;
+                const intercept = yMean - slope * xMean;
+
+                const predictions = [];
+                for (let i = 0; i < days; i++) {
+                    predictions.push(intercept + slope * (n + i));
+                }
+
+                return predictions;
+            }
+
+            exponentialSmoothing(alpha = 0.3, days = 30) {
+                const closes = this.data.map(d => d.close);
+                let forecast = closes[closes.length - 1];
+                const predictions = [];
+
+                for (let i = 0; i < days; i++) {
+                    predictions.push(forecast);
+                    forecast = alpha * forecast + (1 - alpha) * forecast;
+                }
+
+                return predictions;
+            }
+
+            autoRegressive(days = 30, lag = 5) {
+                const closes = this.data.map(d => d.close);
+                const returns = [];
+                
+                for (let i = 1; i < closes.length; i++) {
+                    returns.push((closes[i] - closes[i-1]) / closes[i-1]);
+                }
+
+                let predictions = [closes[closes.length - 1]];
+                const lastReturns = returns.slice(-lag);
+
+                for (let i = 0; i < days - 1; i++) {
+                    const avgReturn = lastReturns.reduce((a, b) => a + b) / lag;
+                    const nextPrice = predictions[predictions.length - 1] * (1 + avgReturn);
+                    predictions.push(nextPrice);
+                    lastReturns.push(avgReturn);
+                    lastReturns.shift();
+                }
+
+                return predictions;
+            }
+
+            ensemblePredict(days = 30) {
+                const lr = this.linearRegression(days);
+                const es = this.exponentialSmoothing(0.3, days);
+                const ar = this.autoRegressive(days, 5);
+
+                const ensemble = [];
+                for (let i = 0; i < days; i++) {
+                    ensemble.push((lr[i] + es[i] + ar[i]) / 3);
+                }
+
+                return ensemble;
+            }
+
+            getConfidenceInterval(predictions, historicalVolatility, confidence = 0.95) {
+                const z = 1.96;
+                const intervals = predictions.map(p => ({
+                    point: p,
+                    upper: p * (1 + historicalVolatility * z),
+                    lower: p * (1 - historicalVolatility * z)
+                }));
+                return intervals;
+            }
+        }
+
+        // ============ GLOBAL STATE ============
+        let currentStock = 'AAPL';
+        let data = [];
+        let analyzer = null;
+        let predictor = null;
+        let chartInstances = {};
+
+        // ============ FUNCTIONS ============
+        function generateData() {
+            const generator = new StockDataGenerator(currentStock);
+            return generator.generateData(30);
+        }
+
+        function updateOverview() {
+            currentStock = document.getElementById('stockSelect').value;
+            data = generateData();
+            analyzer = new DataAnalyzer(data);
+            predictor = new MLPredictor(data);
+
+            const stats = analyzer.getStats();
+            updateStatsGrid(stats);
+            updateCharts();
+            updateTechnicalAnalysis();
+            updatePrediction();
+            analyzePortfolio();
+            generateAIInsights();
+        }
+
+        function updateStatsGrid(stats) {
+            const grid = document.getElementById('statsGrid');
+            const changeClass = stats.changePercent >= 0 ? 'positive' : 'negative';
+            const changeSymbol = stats.changePercent >= 0 ? '↑' : '↓';
+
+            grid.innerHTML = `
+                <div class="stat-box">
+                    <div class="stat-label">Current Price</div>
+                    <div class="stat-value">$${stats.current.toFixed(2)}</div>
+                </div>
+                <div class="stat-box">
+                    <div class="stat-label">Price Change (30D)</div>
+                    <div class="stat-value ${changeClass}">${changeSymbol} ${stats.changePercent.toFixed(2)}%</div>
+                </div>
+                <div class="stat-box">
+                    <div class="stat-label">Volatility (Annual)</div>
+                    <div class="stat-value">${stats.volatility.toFixed(2)}%</div>
+                </div>
+                <div class="stat-box">
+                    <div class="stat-label">52-Week High/Low</div>
+                    <div class="stat-value">$${stats.high.toFixed(2)} / $${stats.low.toFixed(2)}</div>
+                </div>
+            `;
+        }
+
+        function destroyChart(chartId) {
+            if (chartInstances[chartId]) {
+                chartInstances[chartId].destroy();
+            }
+        }
+
+        function updateCharts() {
+            const closes = data.map(d => d.close);
+            const volumes = data.map(d => d.volume / 1000000);
+            const dates = data.map(d => d.date.toLocaleDateString());
+            const stats = analyzer.getStats();
+            const returns = stats.returns;
+
+            // Price chart
+            destroyChart('priceChart');
+            chartInstances['priceChart'] = new Chart(document.getElementById('priceChart'), {
+                type: 'line',
+                data: {
+                    labels: dates,
+                    datasets: [{
+                        label: currentStock,
+                        data: closes,
+                        borderColor: '#14b8a6',
+                        backgroundColor: 'rgba(20, 184, 166, 0.1)',
+                        borderWidth: 2,
+                        tension: 0.4,
+                        fill: true,
+                        pointRadius: 0
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: { display: true, labels: { color: '#cbd5e1' } }
+                    },
+                    scales: {
+                        y: { grid: { color: '#475569' }, ticks: { color: '#cbd5e1' } },
+                        x: { grid: { display: false }, ticks: { color: '#cbd5e1' } }
+                    }
+                }
+            });
+
+            // Volume chart
+            destroyChart('volumeChart');
+            chartInstances['volumeChart'] = new Chart(document.getElementById('volumeChart'), {
+                type: 'bar',
+                data: {
+                    labels: dates,
+                    datasets: [{
+                        label: 'Volume (M)',
+                        data: volumes,
+                        backgroundColor: 'rgba(236, 72, 153, 0.6)',
+                        borderColor: '#ec4899'
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: { legend: { display: true, labels: { color: '#cbd5e1' } } },
+                    scales: {
+                        y: { grid: { color: '#475569' }, ticks: { color: '#cbd5e1' } },
+                        x: { grid: { display: false }, ticks: { color: '#cbd5e1' } }
+                    }
+                }
+            });
+
+            // Returns distribution
+            destroyChart('returnsChart');
+            const binCount = 20;
+            const min = Math.min(...returns);
+            const max = Math.max(...returns);
+            const bins = Array(binCount).fill(0);
+            const binWidth = (max - min) / binCount;
+
+            returns.forEach(r => {
+                let binIndex = Math.floor((r - min) / binWidth);
+                if (binIndex === binCount) binIndex--;
+                bins[binIndex]++;
+            });
+
+            chartInstances['returnsChart'] = new Chart(document.getElementById('returnsChart'), {
+                type: 'bar',
+                data: {
+                    labels: Array.from({length: binCount}, (_, i) => `${(min + i * binWidth).toFixed(3)}`),
+                    datasets: [{
+                        label: 'Frequency',
+                        data: bins,
+                        backgroundColor: '#10b981'
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: { legend: { display: false } },
+                    scales: {
+                        y: { grid: { color: '#475569' }, ticks: { color: '#cbd5e1' } },
+                        x: { grid: { display: false }, ticks: { color: '#cbd5e1', maxTicksLimit: 6 } }
+                    }
+                }
+            });
+
+            // Volatility chart
+            const rollingVolatility = [];
+            for (let i = 20; i < returns.length; i++) {
+                const slice = returns.slice(i - 20, i);
+                const mean = slice.reduce((a, b) => a + b) / slice.length;
+                const variance = slice.reduce((sq, n) => sq + Math.pow(n - mean, 2), 0) / slice.length;
+                rollingVolatility.push(Math.sqrt(variance) * 100);
+            }
+
+            destroyChart('volatilityChart');
+            chartInstances['volatilityChart'] = new Chart(document.getElementById('volatilityChart'), {
+                type: 'line',
+                data: {
+                    labels: dates.slice(20),
+                    datasets: [{
+                        label: 'Volatility (%)',
+                        data: rollingVolatility,
+                        borderColor: '#f59e0b',
+                        backgroundColor: 'rgba(245, 158, 11, 0.1)',
+                        borderWidth: 2,
+                        fill: true
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: { legend: { display: true, labels: { color: '#cbd5e1' } } },
+                    scales: {
+                        y: { grid: { color: '#475569' }, ticks: { color: '#cbd5e1' } },
+                        x: { grid: { display: false }, ticks: { color: '#cbd5e1' } }
+                    }
+                }
+            });
+        }
+
+        function updateTechnicalAnalysis() {
+            const dates = data.map(d => d.date.toLocaleDateString());
+            const closes = data.map(d => d.close);
+            const stats = analyzer.getStats();
+
+            const sma20 = analyzer.movingAverage(20);
+            const sma50 = analyzer.movingAverage(50);
+
+            // Moving averages chart
+            destroyChart('maChart');
+            chartInstances['maChart'] = new Chart(document.getElementById('maChart'), {
+                type: 'line',
+                data: {
+                    labels: dates,
+                    datasets: [
+                        {
+                            label: 'Price',
+                            data: closes,
+                            borderColor: '#14b8a6',
+                            borderWidth: 1,
+                            pointRadius: 0
+                        },
+                        {
+                            label: 'SMA 20',
+                            data: sma20,
+                            borderColor: '#f59e0b',
+                            borderWidth: 2,
+                            pointRadius: 0
+                        },
+                        {
+                            label: 'SMA 50',
+                            data: sma50,
+                            borderColor: '#ef4444',
+                            borderWidth: 2,
+                            pointRadius: 0
+                        }
+                    ]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: { legend: { display: true, labels: { color: '#cbd5e1' } } },
+                    scales: {
+                        y: { grid: { color: '#475569' }, ticks: { color: '#cbd5e1' } },
+                        x: { grid: { display: false }, ticks: { color: '#cbd5e1' } }
+                    }
+                }
+            });
+
+            // RSI
+            const rsi = analyzer.calculateRSI(14);
+            destroyChart('rsiChart');
+            chartInstances['rsiChart'] = new Chart(document.getElementById('rsiChart'), {
+                type: 'line',
+                data: {
+                    labels: dates,
+                    datasets: [{
+                        label: 'RSI (14)',
+                        data: rsi,
+                        borderColor: '#ec4899',
+                        backgroundColor: 'rgba(236, 72, 153, 0.1)',
+                        borderWidth: 2,
+                        fill: true,
+                        pointRadius: 0
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: { legend: { display: true, labels: { color: '#cbd5e1' } } },
+                    scales: {
+                        y: { min: 0, max: 100, grid: { color: '#475569' }, ticks: { color: '#cbd5e1' } },
+                        x: { grid: { display: false }, ticks: { color: '#cbd5e1' } }
+                    }
+                }
+            });
+
+            // MACD
+            const { macd, signal } = analyzer.calculateMACD();
+            destroyChart('macdChart');
+            chartInstances['macdChart'] = new Chart(document.getElementById('macdChart'), {
+                type: 'line',
+                data: {
+                    labels: dates,
+                    datasets: [
+                        {
+                            label: 'MACD',
+                            data: macd,
+                            borderColor: '#14b8a6',
+                            borderWidth: 2,
+                            pointRadius: 0
+                        },
+                        {
+                            label: 'Signal',
+                            data: signal.map((v, i) => i < macd.length - signal.length ? null : v),
+                            borderColor: '#f59e0b',
+                            borderWidth: 2,
+                            pointRadius: 0
+                        }
+                    ]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: { legend: { display: true, labels: { color: '#cbd5e1' } } },
+                    scales: {
+                        y: { grid: { color: '#475569' }, ticks: { color: '#cbd5e1' } },
+                        x: { grid: { display: false }, ticks: { color: '#cbd5e1' } }
+                    }
+                }
+            });
+
+            // Bollinger Bands
+            const bb = analyzer.calculateBollingerBands(20, 2);
+            const upper = bb.map(b => b ? b.upper : null);
+            const middle = bb.map(b => b ? b.middle : null);
+            const lower = bb.map(b => b ? b.lower : null);
+
+            destroyChart('bbChart');
+            chartInstances['bbChart'] = new Chart(document.getElementById('bbChart'), {
+                type: 'line',
+                data: {
+                    labels: dates,
+                    datasets: [
+                        {
+                            label: 'Price',
+                            data: closes,
+                            borderColor: '#14b8a6',
+                            borderWidth: 2,
+                            pointRadius: 0,
+                            order: 3
+                        },
+                        {
+                            label: 'Upper Band',
+                            data: upper,
+                            borderColor: '#ef4444',
+                            borderWidth: 1,
+                            pointRadius: 0,
+                            borderDash: [5, 5]
+                        },
+                        {
+                            label: 'Middle Band',
+                            data: middle,
+                            borderColor: '#f59e0b',
+                            borderWidth: 1,
+                            pointRadius: 0
+                        },
+                        {
+                            label: 'Lower Band',
+                            data: lower,
+                            borderColor: '#ef4444',
+                            borderWidth: 1,
+                            pointRadius: 0,
+                            borderDash: [5, 5]
+                        }
+                    ]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: { legend: { display: true, labels: { color: '#cbd5e1' } } },
+                    scales: {
+                        y: { grid: { color: '#475569' }, ticks: { color: '#cbd5e1' } },
+                        x: { grid: { display: false }, ticks: { color: '#cbd5e1' } }
+                    }
+                }
+            });
+
+            // Technical indicators table
+            const rsiValue = rsi[rsi.length - 1];
+            const rsiSignal = rsiValue > 70 ? 'Overbought' : rsiValue < 30 ? 'Oversold' : 'Neutral';
+            const macdValue = macd[macd.length - 1];
+            const signalValue = signal[signal.length - 1];
+            const macdSignal = macdValue > signalValue ? 'Bullish' : 'Bearish';
+
+            document.getElementById('technicalTable').innerHTML = `
+                <tr>
+                    <td>RSI (14)</td>
+                    <td>${rsiValue ? rsiValue.toFixed(2) : 'N/A'}</td>
+                    <td><span class="badge badge-${rsiSignal === 'Overbought' ? 'danger' : rsiSignal === 'Oversold' ? 'success' : 'warning'}">${rsiSignal}</span></td>
+                    <td>${rsiValue > 70 ? 'Potential reversal' : rsiValue < 30 ? 'Strong buying pressure' : 'Normal range'}</td>
+                </tr>
+                <tr>
+                    <td>MACD</td>
+                    <td>${macdValue ? macdValue.toFixed(4) : 'N/A'}</td>
+                    <td><span class="badge badge-${macdSignal === 'Bullish' ? 'success' : 'danger'}">${macdSignal}</span></td>
+                    <td>${macdSignal === 'Bullish' ? 'Positive momentum' : 'Negative momentum'}</td>
+                </tr>
+                <tr>
+                    <td>Moving Averages</td>
+                    <td>SMA 20: ${sma20[sma20.length - 1]?.toFixed(2)}, SMA 50: ${sma50[sma50.length - 1]?.toFixed(2)}</td>
+                    <td><span class="badge badge-${sma20[sma20.length - 1] > sma50[sma50.length - 1] ? 'success' : 'danger'}">${sma20[sma20.length - 1] > sma50[sma50.length - 1] ? 'Bullish' : 'Bearish'}</span></td>
+                    <td>${sma20[sma20.length - 1] > sma50[sma50.length - 1] ? 'Uptrend confirmed' : 'Downtrend confirmed'}</td>
+                </tr>
+                <tr>
+                    <td>Volatility</td>
+                    <td>${stats.volatility.toFixed(2)}%</td>
+                    <td><span class="badge badge-${stats.volatility > 30 ? 'danger' : stats.volatility > 20 ? 'warning' : 'success'}">${stats.volatility > 30 ? 'High' : stats.volatility > 20 ? 'Moderate' : 'Low'}</span></td>
+                    <td>${stats.volatility > 30 ? 'High price swings' : stats.volatility > 20 ? 'Normal behavior' : 'Stable'}</td>
+                </tr>
+            `;
+        }
+
+        function updatePrediction() {
+            const predictions = predictor.ensemblePredict(30);
+            const stats = analyzer.getStats();
+            const confidence = predictor.getConfidenceInterval(predictions, stats.volatility / 100, 0.95);
+
+            const lastPrice = data[data.length - 1].close;
+            const futureDate = new Date(data[data.length - 1].date);
+
+            const lr = predictor.linearRegression(30);
+            const dates = Array.from({length: 31}, (_, i) => {
+                const d = new Date(data[data.length - 1].date);
+                d.setDate(d.getDate() + i);
+                return d.toLocaleDateString();
+            });
+
+            // Linear regression chart
+            destroyChart('predictionChart');
+            chartInstances['predictionChart'] = new Chart(document.getElementById('predictionChart'), {
+                type: 'line',
+                data: {
+                    labels: dates,
+                    datasets: [
+                        {
+                            label: 'Historical Price',
+                            data: [...data.map(d => d.close), null],
+                            borderColor: '#14b8a6',
+                            borderWidth: 2,
+                            pointRadius: 0
+                        },
+                        {
+                            label: 'Linear Forecast',
+                            data: Array(data.length).fill(null).concat(lr),
+                            borderColor: '#ec4899',
+                            borderWidth: 2,
+                            borderDash: [5, 5],
+                            pointRadius: 0
+                        }
+                    ]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: { legend: { display: true, labels: { color: '#cbd5e1' } } },
+                    scales: {
+                        y: { grid: { color: '#475569' }, ticks: { color: '#cbd5e1' } },
+                        x: { grid: { display: false }, ticks: { color: '#cbd5e1' } }
+                    }
+                }
+            });
+
+            // Ensemble forecast chart
+            destroyChart('maPredictionChart');
+            chartInstances['maPredictionChart'] = new Chart(document.getElementById('maPredictionChart'), {
+                type: 'line',
+                data: {
+                    labels: dates,
+                    datasets: [
+                        {
+                            label: 'Historical Price',
+                            data: [...data.map(d => d.close), null],
+                            borderColor: '#14b8a6',
+                            borderWidth: 2,
+                            pointRadius: 0
+                        },
+                        {
+                            label: 'Ensemble Forecast',
+                            data: Array(data.length).fill(null).concat(predictions),
+                            borderColor: '#10b981',
+                            borderWidth: 2,
+                            borderDash: [5, 5],
+                            pointRadius: 0
+                        }
+                    ]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: { legend: { display: true, labels: { color: '#cbd5e1' } } },
+                    scales: {
+                        y: { grid: { color: '#475569' }, ticks: { color: '#cbd5e1' } },
+                        x: { grid: { display: false }, ticks: { color: '#cbd5e1' } }
+                    }
+                }
+            });
+
+            // Prediction boxes
+            let html = '';
+            const key30Days = [];
+            for (let i = 0; i < 30; i += 5) {
+                const d = new Date(futureDate);
+                d.setDate(d.getDate() + i + 1);
+                const pred = predictions[i];
+                const change = ((pred - lastPrice) / lastPrice * 100);
+
+                key30Days.push({
+                    date: d.toLocaleDateString(),
+                    price: pred,
+                    change: change
+                });
+            }
+
+            key30Days.forEach(p => {
+                const changeClass = p.change >= 0 ? 'positive' : 'negative';
+                html += `
+                    <div class="prediction-box">
+                        <strong>${p.date}</strong>: $${p.price.toFixed(2)} 
+                        <span class="${changeClass}">(${p.change > 0 ? '+' : ''}${p.change.toFixed(2)}%)</span>
+                    </div>
+                `;
+            });
+
+            document.getElementById('predictionBoxes').innerHTML = html;
+
+            // Prediction metrics
+            const rmse = Math.sqrt(predictions.reduce((sum, p, i) => sum + Math.pow(p - lastPrice, 2), 0) / predictions.length);
+            const mae = predictions.reduce((sum, p) => sum + Math.abs(p - lastPrice), 0) / predictions.length;
+
+            document.getElementById('predictionMetrics').innerHTML = `
+                <div class="stat-box">
+                    <div class="stat-label">30-Day Prediction</div>
+                    <div class="stat-value">$${predictions[29].toFixed(2)}</div>
+                </div>
+                <div class="stat-box">
+                    <div class="stat-label">Expected Change</div>
+                    <div class="stat-value ${predictions[29] >= lastPrice ? 'positive' : 'negative'}">
+                        ${predictions[29] >= lastPrice ? '+' : ''}${((predictions[29] - lastPrice) / lastPrice * 100).toFixed(2)}%
+                    </div>
+                </div>
+                <div class="stat-box">
+                    <div class="stat-label">Model RMSE</div>
+                    <div class="stat-value">$${rmse.toFixed(2)}</div>
+                </div>
+                <div class="stat-box">
+                    <div class="stat-label">Model MAE</div>
+                    <div class="stat-value">$${mae.toFixed(2)}</div>
+                </div>
+            `;
+
+            // Confidence levels
+            destroyChart('confidenceChart');
+            chartInstances['confidenceChart'] = new Chart(document.getElementById('confidenceChart'), {
+                type: 'doughnut',
+                data: {
+                    labels: ['Very High', 'High', 'Medium', 'Low'],
+                    datasets: [{
+                        data: [25, 30, 25, 20],
+                        backgroundColor: ['#10b981', '#f59e0b', '#ef4444', '#64748b']
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: { position: 'bottom', labels: { color: '#cbd5e1' } }
+                    }
+                }
+            });
+
+            // Risk assessment
+            const risk = stats.volatility > 30 ? 'High' : stats.volatility > 20 ? 'Moderate' : 'Low';
+            const riskClass = risk === 'High' ? 'danger' : risk === 'Moderate' ? 'warning' : 'success';
+
+            document.getElementById('riskAssessment').innerHTML = `
+                <div class="stat-box">
+                    <div class="stat-label">Overall Risk</div>
+                    <div class="stat-value"><span class="badge badge-${riskClass}">${risk}</span></div>
+                </div>
+                <div class="stat-box">
+                    <div class="stat-label">Beta</div>
+                    <div class="stat-value">${(stats.volatility / 15).toFixed(2)}</div>
+                </div>
+                <div class="stat-box">
+                    <div class="stat-label">Max Drawdown</div>
+                    <div class="stat-value">${((Math.min(...data.map(d => d.close)) - Math.max(...data.map(d => d.close))) / Math.max(...data.map(d => d.close)) * 100).toFixed(2)}%</div>
+                </div>
+                <div class="stat-box">
+                    <div class="stat-label">Sharpe Ratio</div>
+                    <div class="stat-value">${((stats.changePercent / 30) / (stats.volatility / 100)).toFixed(2)}</div>
+                </div>
+            `;
+        }
+
+        function analyzePortfolio() {
+            const stocks = ['AAPL', 'GOOGL', 'MSFT', 'TSLA', 'AMZN'];
+            const portfolioData = {};
+
+            stocks.forEach(ticker => {
+                const gen = new StockDataGenerator(ticker);
+                const d = gen.generateData(30);
+                const an = new DataAnalyzer(d);
+                const stats = an.getStats();
+                portfolioData[ticker] = {
+                    price: stats.current,
+                    return: stats.changePercent,
+                    volatility: stats.volatility,
+                    weight: 0.2
+                };
+            });
+
+            // Portfolio pie chart
+            destroyChart('portfolioChart');
+            chartInstances['portfolioChart'] = new Chart(document.getElementById('portfolioChart'), {
+                type: 'pie',
+                data: {
+                    labels: Object.keys(portfolioData),
+                    datasets: [{
+                        data: Object.values(portfolioData).map(() => 20),
+                        backgroundColor: ['#14b8a6', '#ec4899', '#f59e0b', '#10b981', '#3b82f6']
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: { position: 'bottom', labels: { color: '#cbd5e1' } }
+                    }
+                }
+            });
+
+            // Portfolio stats
+            const portfolioReturn = Object.values(portfolioData).reduce((sum, v) => sum + v.return * v.weight, 0);
+            const portfolioVol = Math.sqrt(Object.values(portfolioData).reduce((sum, v) => sum + Math.pow(v.volatility * v.weight, 2), 0));
+
+            document.getElementById('portfolioStats').innerHTML = `
+                <div class="stat-box">
+                    <div class="stat-label">Portfolio Return</div>
+                    <div class="stat-value ${portfolioReturn >= 0 ? 'positive' : 'negative'}">${portfolioReturn >= 0 ? '+' : ''}${portfolioReturn.toFixed(2)}%</div>
+                </div>
+                <div class="stat-box">
+                    <div class="stat-label">Portfolio Volatility</div>
+                    <div class="stat-value">${portfolioVol.toFixed(2)}%</div>
+                </div>
+                <div class="stat-box">
+                    <div class="stat-label">Sharpe Ratio</div>
+                    <div class="stat-value">${(portfolioReturn / portfolioVol).toFixed(2)}</div>
+                </div>
+            `;
+
+            document.getElementById('portfolioSummary').innerHTML = `
+                <div class="stat-box">
+                    <div class="stat-label">Total Value</div>
+                    <div class="stat-value">$1,000,000</div>
+                </div>
+                <div class="stat-box">
+                    <div class="stat-label">Diversification</div>
+                    <div class="stat-value">5 Assets</div>
+                </div>
+                <div class="stat-box">
+                    <div class="stat-label">Risk Level</div>
+                    <div class="stat-value"><span class="badge badge-warning">Moderate</span></div>
+                </div>
+            `;
+
+            // Portfolio table
+            let tableHTML = '';
+            Object.entries(portfolioData).forEach(([ticker, data]) => {
+                tableHTML += `
+                    <tr>
+                        <td><strong>${ticker}</strong></td>
+                        <td>$${data.price.toFixed(2)}</td>
+                        <td class="${data.return >= 0 ? 'positive' : 'negative'}">${data.return >= 0 ? '+' : ''}${data.return.toFixed(2)}%</td>
+                        <td>${data.volatility.toFixed(2)}%</td>
+                        <td>${(data.return / (data.volatility / 100)).toFixed(2)}</td>
+                    </tr>
+                `;
+            });
+            document.getElementById('portfolioTable').innerHTML = tableHTML;
+        }
+
+        function generateAIInsights() {
+            const stats = analyzer.getStats();
+            const predictions = predictor.ensemblePredict(30);
+
+            let sentiment = 'NEUTRAL';
+            let color = 'warning';
+
+            if (stats.changePercent > 5 && predictions[29] > data[data.length - 1].close) {
+                sentiment = 'BULLISH';
+                color = 'success';
+            } else if (stats.changePercent < -5 || predictions[29] < data[data.length - 1].close * 0.95) {
+                sentiment = 'BEARISH';
+                color = 'danger';
+            }
+
+            const insights = `
+                <div class="prediction-box">
+                    <h3>Market Sentiment: <span class="badge badge-${color === 'success' ? 'success' : color === 'danger' ? 'danger' : 'warning'}">${sentiment}</span></h3>
+                    <p class="insight-text">${sentiment === 'BULLISH' ? 
+                        `${currentStock} shows strong bullish signals with positive momentum. Recent price action and technical indicators suggest continued upside potential.` :
+                        sentiment === 'BEARISH' ?
+                        `${currentStock} displays bearish characteristics with negative price pressure. Consider taking defensive positions.` :
+                        `${currentStock} is trading in a consolidation phase with mixed signals. Monitor key support/resistance levels.`
+                    }</p>
+                </div>
+
+                <div class="prediction-box">
+                    <h3>Technical Summary</h3>
+                    <p class="insight-text">• <strong>Current Price:</strong> $${stats.current.toFixed(2)}</p>
+                    <p class="insight-text">• <strong>30-Day Change:</strong> ${stats.changePercent >= 0 ? '+' : ''}${stats.changePercent.toFixed(2)}%</p>
+                    <p class="insight-text">• <strong>Volatility:</strong> ${stats.volatility.toFixed(2)}%</p>
+                    <p class="insight-text">• <strong>Support:</strong> $${stats.low.toFixed(2)} | <strong>Resistance:</strong> $${stats.high.toFixed(2)}</p>
+                </div>
+
+                <div class="prediction-box">
+                    <h3>30-Day Forecast</h3>
+                    <p class="insight-text"><strong>Ensemble Model Prediction:</strong> $${predictions[29].toFixed(2)}</p>
+                    <p class="insight-text"><strong>Expected Movement:</strong> ${predictions[29] >= stats.current ? '+' : ''}${((predictions[29] - stats.current) / stats.current * 100).toFixed(2)}%</p>
+                    <p class="insight-text"><strong>Confidence Level:</strong> ${stats.volatility < 20 ? 'High (Stable Market)' : stats.volatility < 30 ? 'Medium (Normal Conditions)' : 'Low (High Volatility)'}</p>
+                </div>
+            `;
+
+            document.getElementById('aiInsights').innerHTML = insights;
+
+            // Buy/Sell signals
+            const rsi = analyzer.calculateRSI(14);
+            const { macd, signal } = analyzer.calculateMACD();
+            const sma20 = analyzer.movingAverage(20);
+            const sma50 = analyzer.movingAverage(50);
+
+            const rsiSignal = rsi[rsi.length - 1] < 30 ? 'BUY' : rsi[rsi.length - 1] > 70 ? 'SELL' : 'HOLD';
+            const macdSignal = macd[macd.length - 1] > signal[signal.length - 1] ? 'BUY' : 'SELL';
+            const maSignal = sma20[sma20.length - 1] > sma50[sma50.length - 1] ? 'BUY' : 'SELL';
+
+            document.getElementById('signals').innerHTML = `
+                <div class="prediction-box">
+                    <strong>RSI Signal (14):</strong> <span class="badge badge-${rsiSignal === 'BUY' ? 'success' : rsiSignal === 'SELL' ? 'danger' : 'warning'}">${rsiSignal}</span>
+                    <p class="insight-text">RSI at ${rsi[rsi.length - 1]?.toFixed(2)}</p>
+                </div>
+                <div class="prediction-box">
+                    <strong>MACD Signal:</strong> <span class="badge badge-${macdSignal === 'BUY' ? 'success' : 'danger'}">${macdSignal}</span>
+                    <p class="insight-text">Momentum indicator ${macdSignal === 'BUY' ? 'crossed above' : 'crossed below'} signal line</p>
+                </div>
+                <div class="prediction-box">
+                    <strong>MA Crossover:</strong> <span class="badge badge-${maSignal === 'BUY' ? 'success' : 'danger'}">${maSignal}</span>
+                    <p class="insight-text">SMA 20 ${maSignal === 'BUY' ? 'above' : 'below'} SMA 50</p>
+                </div>
+            `;
+
+            // Recommendations
+            const buyCount = [rsiSignal, macdSignal, maSignal].filter(s => s === 'BUY').length;
+            const recommendation = buyCount >= 2 ? 'STRONG BUY' : buyCount === 1 ? 'BUY' : 'HOLD/SELL';
+
+            document.getElementById('recommendations').innerHTML = `
+                <div class="prediction-box">
+                    <h3>Overall Recommendation: <span class="badge badge-${buyCount >= 2 ? 'success' : buyCount === 1 ? 'warning' : 'danger'}">${recommendation}</span></h3>
+                    <p class="insight-text">${buyCount} out of 3 technical indicators show buy signals.</p>
+                    <p class="insight-text">${buyCount >= 2 ? '✅ Multiple bullish signals suggest potential upside.' :
+                          buyCount === 1 ? '⚠️ Mixed signals - await confirmation.' :
+                          '❌ Bearish indicators dominate - consider defensive positions.'}</p>
+                </div>
+            `;
+
+            // Analysis report
+            document.getElementById('analysisReport').innerHTML = `
+                <h3>Executive Summary</h3>
+                <p class="insight-text">${currentStock} has been analyzed using multiple data science techniques including statistical analysis, technical indicators, and machine learning models.</p>
+                
+                <h3 style="margin-top: 20px;">Analysis Methods Used</h3>
+                <ul>
+                    <li><strong>Statistical Analysis:</strong> Returns distribution, volatility, risk metrics</li>
+                    <li><strong>Technical Indicators:</strong> Moving averages, RSI, MACD, Bollinger Bands</li>
+                    <li><strong>Machine Learning:</strong> Linear regression, exponential smoothing, autoregressive models</li>
+                    <li><strong>Ensemble Method:</strong> Combined predictions for robust forecasting</li>
+                </ul>
+                
+                <h3 style="margin-top: 20px;">Key Findings</h3>
+                <p class="insight-text">The analysis reveals <strong>${sentiment.toLowerCase()}</strong> market conditions with <strong>${stats.volatility.toFixed(2)}%</strong> annualized volatility. The 30-day ensemble forecast projects a <strong>${predictions[29] >= stats.current ? 'positive' : 'negative'}</strong> movement of <strong>${((predictions[29] - stats.current) / stats.current * 100).toFixed(2)}%</strong>.</p>
+                
+                <h3 style="margin-top: 20px;">Risk Considerations</h3>
+                <p class="insight-text">Investors should be aware of the ${stats.volatility > 30 ? 'elevated volatility levels' : stats.volatility > 20 ? 'moderate volatility' : 'low volatility'} environment. Proper risk management is essential for successful investing.</p>
+                
+                <p style="margin-top: 20px; padding-top: 20px; border-top: 1px solid #475569; font-size: 0.9em; color: #cbd5e1;">
+                    <strong>⚠️ Disclaimer:</strong> This analysis is for educational purposes only. Not actual financial advice. Always consult licensed financial professionals.
+                </p>
+            `;
+        }
+
+        function showTab(tabName) {
+            document.querySelectorAll('.tab-content').forEach(tab => {
+                tab.classList.add('hidden');
+            });
+
+            document.querySelectorAll('.tab-btn').forEach(btn => {
+                btn.classList.remove('active');
+            });
+
+            document.getElementById(tabName).classList.remove('hidden');
+            event.target.classList.add('active');
+        }
+
+        // Initialize on load
+        window.addEventListener('load', updateOverview);
+    </script>
+</body>
+</html>
